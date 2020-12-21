@@ -1,6 +1,6 @@
 # TFVF-HRI
 
-Interactive Learning for Robot Proactive Social Greetings
+[Interactive Learning for Robot Proactive Social Greetings](https://arxiv.org/abs/2012.04832)
 
 ![avatar](./data/doc_imgs/hi.gif)
 

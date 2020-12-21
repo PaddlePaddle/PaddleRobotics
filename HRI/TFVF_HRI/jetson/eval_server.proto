@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package evalserver;
+
+service EvalServer {
+  rpc infer (EvalRequest) returns (EvalResponse) {}
+}
+
+message EvalRequest {
+  int32 nframe = 1;
+  bytes frames = 2;
+}
+
+message EvalResponse {
+  string response = 1;
+  float response_score = 2;
+  float trigger_pred = 3;
+  float nullact_score = 4;
+  int32 nullact_id = 5;
+}

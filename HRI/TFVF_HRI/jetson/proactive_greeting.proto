@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.baidu.robokit.multimode.grpc";
+
+package grpc;
+
+service ProactiveGreeting {
+  rpc infer (stream VideoRequest) returns (stream InferResponse) {}
+}
+
+message VideoRequest {
+  int32 reqID = 1;
+  int32 lag = 2;
+  string wakeup = 3;
+  bytes curFrame = 4;
+}
+
+message InferResponse {
+  string response = 1;
+}

@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <title></title>
+    <script src="./js/jquery-1.9.1.min.js" type="text/javascript"></script>
+    <script src="./js/FileSaver.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var file_name = "";
+        var current_time = 0;
+
+        var movement_list = new Array();
+        movement_list["null"] = "无";
+        movement_list["move_ahead"] = "向前走";
+        movement_list["move_backward"] = "向后走";
+        movement_list["move_left"] = "向左走";
+        movement_list["move_right"] = "向右走";
+        movement_list["turn_left"] = "左转";
+        movement_list["turn_right"] = "右转";
+
+        var action_list = new Array();
+        action_list["null"] = "无";
+        action_list["shake_hand"] = "握手|抬右手";
+        action_list["raise_hand"] = "举手|举右手";
+        action_list["raise_left_hand"] = "抬起左手";
+        action_list["hug"] = "拥抱";
+        action_list["give_me_five"] = "击掌";
+        action_list["twist_head"] = "摇头";
+        action_list["turn_head_to_left"] = "向左看";
+        action_list["turn_head_to_right"] = "向右看";
+        action_list["wave"] = "打招呼";
+        action_list["altman"] = "奥特曼";
+        action_list["superman"] = "超人";
+
+        var expression_list = new Array();
+        expression_list["null"] = "无";
+        expression_list["smile"] = "微笑";
+        expression_list["embarrassed"] = "尴尬";
+        expression_list["shy"] = "害羞";
+        expression_list["anthomaniac"] = "花痴";
+        expression_list["nervous"] = "紧张";
+        expression_list["shocked"] = "震惊";
+        expression_list["cry"] = "哭";
+        expression_list["sleepy"] = "困";
+        expression_list["blushed"] = "脸红";
+        expression_list["depressed"] = "沮丧";
+        expression_list["thinking"] = "思考";
+        expression_list["blink"] = "眨眼";
+        expression_list["concentrated"] = "专心";
+        expression_list["collapse"] = "崩溃";
+        expression_list["despise"] = "鄙视";
+        expression_list["angry"] = "生气";
+        expression_list["watch"] = "观察";
+        expression_list["cool"] = "冷酷";
+        expression_list["desperate"] = "拼命";
+        expression_list["snigger"] = "偷笑";
+        expression_list["sharp"] = "犀利";
+        expression_list["think_of"] = "想到";
+        expression_list["proud"] = "骄傲";
+        expression_list["panic"] = "恐惧";
+        expression_list["sweat"] = "汗";
+        expression_list["fighting"] = "奋斗";
+        expression_list["confused"] = "困惑";
+        expression_list["dizzy"] = "头晕";
+        expression_list["bah"] = "哼哼";
+
+        var score_list = new Array();
+        score_list["fair"] = "1";
+        score_list["bad"] = "0";
+        score_list["good"] = "2";
+
+        var is_eval = false;
+        var is_review = true;
+        var eval_play_sec = 5;
+
+        $(document).ready(function() {
+            var File = document.getElementById('File');
+            var Player = document.getElementById('Player');
+            var TagFile = document.getElementById('TagFile');
+            $("#File").change(function(file) {
+                $("#right").empty();
+                file_name = file.target.files[0].name;
+                var url = window.URL.createObjectURL(file.target.files[0]);
+                Player.src = url;
+                Player.onload = function() {
+                    window.URL.revokeObjectURL(src);
+                };
+
+                TagFile.click();
+            });
+
+            $("#TagFile").change(function(file) {
+                var selectedFile = file.target.files[0]; //获取读取的File对象
+                //$("#right").empty(); // uncomment to disable merge
+                console.log(selectedFile);
+                var name = selectedFile.name; //读取选中文件的文件名
+                var size = selectedFile.size; //读取选中文件的大小
+                console.log("文件名:" + name + "大小：" + size);
+
+                var reader = new FileReader(); //这里是核心！！！读取操作就是由它完成的。
+                reader.readAsText(selectedFile); //读取文件的内容
+
+                reader.onload = function(event) {
+                    var right_div = document.getElementById('right');
+                    var lines = event.target.result.split("\n");
+                    lines.forEach(function(item) {
+                        if (item == "") {
+                            console.log("END!");
+                        } else {
+                            var tag_js = JSON.parse(item);
+                            //console.log(tag_js);
+                            if (tag_js["Time"] == "") {
+                                //bt_addtag_callback(null, true);
+                                var last_child = right_div.lastChild;
+                                var tag_elements = last_child.firstChild;
+                                while (tag_elements != last_child.lastChild) {
+
+                                    if (tag_elements.type == "button" && tag_elements.value == "插入") {
+                                        //console.log(tag_elements);
+                                        tag_elements.click();
+                                    }
+                                    tag_elements = tag_elements.nextSibling;
+                                }
+                            } else {
+                                bt_addtag_callback(null, false);
+                            }
+
+                            var last_child = right_div.lastChild;
+                            if (is_eval) {
+                                last_child = last_child.previousSibling;
+                            }
+                            var tag_elements = last_child.firstChild;
+                            while (tag_elements != last_child.lastChild) {
+                                /*console.log(tag_elements.tagtype);
+                                console.log(tag_elements);*/
+                                switch (tag_elements.tagtype) {
+                                    case "Time":
+                                        tag_elements.innerHTML = tag_js["Time"];
+                                        break;
+                                    case "Scenario":
+                                        for (var i = 0; i < tag_elements.options.length; i++) {
+                                            if (tag_elements.options[i].value == tag_js["Scenario"]) {
+                                                tag_elements.options[i].selected = true;
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    case "Movement":
+                                        for (var i = 0; i < tag_elements.options.length; i++) {
+                                            if (tag_elements.options[i].value == tag_js["Movement"]) {
+                                                tag_elements.options[i].selected = true;
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    case "Action":
+                                        for (var i = 0; i < tag_elements.options.length; i++) {
+                                            if (tag_elements.options[i].value == tag_js["Action"]) {
+                                                tag_elements.options[i].selected = true;
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    case "Talk":
+                                        var input = tag_elements.firstChild;
+                                        input.value = tag_js["Talk"];
+                                        tag_elements.value = input.value;
+                                        break;
+                                    case "ID":
+                                        var input = tag_elements.firstChild;
+                                        input.value = tag_js["ID"];
+                                        tag_elements.value = input.value;
+                                        break;
+                                    case "Expression":
+                                        for (var i = 0; i < tag_elements.options.length; i++) {
+                                            if (tag_elements.options[i].value == tag_js["Expression"]) {
+                                                tag_elements.options[i].selected = true;
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                tag_elements = tag_elements.nextSibling;
+                            }
+                        }
+
+                    });
+                };
+            });
+
+            Player.addEventListener("timeupdate", function() {
+                var timeDisplay;
+                //用秒数来显示当前播放进度
+                timeDisplay = Math.floor(Player.currentTime);
+                current_time = Player.currentTime;
+            }, false);
+
+            window.onbeforeunload = function() {
+                return "";
+            }
+        });
+
+        function bt_addtag_callback(e, is_insert) {
+            /* if(e != null && Player.readyState != 4){
+               alert("请先选择视频文件！");
+               return;
+             }*/
+            /*console.log(e);
+            console.log(is_insert);*/
+            var RightGrid = document.getElementById('right');
+            var tag = document.createElement("p");
+            tag.currenttime = current_time;
+            //console.log(tag.currenttime);
+            /*var current_time = 36610;*/
+            var time = document.createElement("label");
+            var hour = parseInt(parseInt(current_time / 60) / 60);
+            var minute = parseInt(current_time / 60) - (hour * 60);
+            var second = (current_time - parseInt(current_time / 60) * 60).toFixed(2);
+            /*console.log(hour, minute, second);*/
+            if (is_insert) {
+                time.innerHTML = "";
+            } else {
+                time.innerHTML = hour + ":" + minute + ":" + second;
+            }
+            time.style.marginLeft = '10px';
+            time.style.width = "80px";
+            time.style.display = "inline-block"
+            time.tagtype = "Time";
+            tag.appendChild(time);
+
+            var ID = document.createElement("div");
+            ID.style.height = "30px";
+            ID.style.position = "absolute";
+            ID.style.width = "50px";
+            ID.style.left = "90px";
+            if (is_insert) {
+                ID.style.right = "40px";
+            } else {
+                ID.style.right = "83px";
+            }
+            ID.style.marginTop = '-33px';
+            var ID_input = document.createElement("input");
+            ID_input.style.width = "100%";
+
+            ID_input.style.height = "30px";
+            ID_input.onchange = function() {
+                ID.value = ID_input.value;
+            }
+            ID.appendChild(ID_input);
+            ID.value = "";
+            ID.tagtype = "ID";
+            tag.appendChild(ID); //创建说话输入框
+
+            var movement = createMovement();
+            tag.appendChild(movement);
+
+            var action = createAction();
+            tag.appendChild(action);
+
+            var talk = document.createElement("div");
+            /*talk.style.marginLeft = '2px';*/
+            talk.style.background = "#00ff00";
+            /*talk.style.marginTop = '2px';
+            talk.style.marginBottom = '2px';*/
+            /*talk.style.width = '100%';*/
+            talk.style.height = "25px";
+            talk.style.position = "absolute";
+            talk.style.left = "325px";
+            if (is_insert) {
+                talk.style.right = "140px";
+            } else {
+                talk.style.right = "183px";
+            }
+            /*talk.style.right = "183px";*/
+            talk.style.marginTop = '-32px';
+            var talk_input = document.createElement("input");
+            talk_input.style.width = "100%";
+            talk_input.style.height = "25px";
+            talk_input.onchange = function() {
+                talk.value = talk_input.value;
+            }
+            talk.appendChild(talk_input);
+            talk.value = "";
+            talk.tagtype = "Talk";
+            tag.appendChild(talk);
+
+            var expression = createExpression();
+            expression.style.position = "absolute";
+            if (is_insert) {
+                expression.style.right = "85px";
+            } else {
+                expression.style.right = "127px";
+            }
+            tag.appendChild(expression);
+
+            if (!is_insert) {
+                var bt_jump = document.createElement("input");
+                bt_jump.type = "button";
+                bt_jump.title = "视频跳转到该条标记的时间点";
+                bt_jump.value = "查看";
+                bt_jump.style.width = "40px";
+                bt_jump.style.height = "30px";
+                bt_jump.style.marginLeft = '1px';
+                bt_jump.style.marginTop = '2px';
+                bt_jump.style.marginBottom = '2px';
+                bt_jump.style.position = "absolute";
+                bt_jump.style.right = "85px";
+                bt_jump.onclick = function() {
+                    /*var Player = document.getElementById('Player');*/
+                    //console.log(time.innerHTML);
+                    var str_time = time.innerHTML;
+                    var tims = str_time.split(":");
+                    var h = parseFloat(tims[0])
+                    var m = parseFloat(tims[1])
+                    var s = parseFloat(tims[2])
+                    var time_tag = h * 3600.0 + m * 60.0 + s;
+                    var play_elapse = eval_play_sec;
+                    if (is_review) {
+                        time_tag = time_tag - eval_play_sec;
+                    }
+                    if (time_tag < 0) {
+                        play_elapse = time_tag;
+                        time_tag = 0;
+                    }
+                    //console.log(time_tag);
+                    Player.currentTime = time_tag;
+
+                    if (is_review) {
+                        Player.play();
+                        setTimeout(function() {
+                            Player.pause();
+                        }, play_elapse * 1000);
+                    }
+                };
+                tag.appendChild(bt_jump);
+            }
+
+
+            var bt_insert = document.createElement("input");
+            bt_insert.title = "在该时间点插入其他标记";
+            bt_insert.type = "button";
+            bt_insert.value = "插入";
+            bt_insert.style.width = "40px";
+            bt_insert.style.height = "30px";
+            bt_insert.style.marginLeft = '1px';
+            bt_insert.style.marginTop = '2px';
+            bt_insert.style.marginBottom = '2px';
+            bt_insert.style.position = "absolute";
+            bt_insert.style.right = "44px";
+            bt_insert.onclick = function(event) {
+                bt_addtag_callback(event, true);
+
+            };
+            tag.appendChild(bt_insert);
+
+            var bt_delete = document.createElement("input");
+            bt_delete.type = "button";
+            bt_delete.title = "删除当前标记";
+            bt_delete.value = "删除";
+            bt_delete.style.width = "40px";
+            bt_delete.style.height = "30px";
+            /*bt_delete.style.marginLeft = '1px';*/
+            bt_delete.style.marginTop = '2px';
+            bt_delete.style.marginBottom = '2px';
+            bt_delete.style.position = "absolute";
+            bt_delete.style.right = "3px";
+            bt_delete.onclick = function(event) {
+                /*console.log(event.target.parentNode.addmode)*/
+                var current_tag = event.target.parentNode;
+                if (current_tag != RightGrid.lastChild && current_tag.addmode != "insert" && current_tag.nextSibling.addmode == "insert") {
+                    var r = confirm("将删除该标记及其所有子标记，确定吗？");
+                    if (r == true) {
+                        var next_tag = current_tag.nextSibling;
+                        while (next_tag.addmode == "insert") {
+                            RightGrid.removeChild(next_tag);
+                            next_tag = current_tag.nextSibling;
+                            if (next_tag == RightGrid.lastChild && current_tag.addmode == "insert") {
+                                RightGrid.removeChild(next_tag);
+                                break;
+                            }
+                        }
+                        RightGrid.removeChild(current_tag);
+                    }
+                } else {
+                    RightGrid.removeChild(current_tag);
+                }
+
+            };
+            tag.appendChild(bt_delete);
+
+            /*tag.style.height = "50px";*/
+
+            tag.style.marginLeft = '1px';
+            tag.style.marginRight = '1px';
+            tag.style.marginTop = '5px';
+            tag.style.marginBottom = '5px';
+            /*tag.style.position = "relative";
+            tag.style.right = "5px";*/
+
+            /*RightGrid.appendChild(tag);*/
+            if (is_insert) {
+                tag.style.background = "#ccffcc";
+                tag.addmode = "insert";
+                insertAfter(tag, event.target.parentNode);
+                /*RightGrid.insertAfter(tag, event.target.parentNode);*/
+                //console.log(event.target.parentNode);
+            } else {
+                tag.addmode = "append";
+                tag.style.background = "#aaffaa";
+                RightGrid.appendChild(tag);
+            }
+            /*console.log(tag.addmode);
+            console.log(tag);*/
+
+            if (is_eval) {
+                var eval_tag = document.createElement("p");
+
+                var on_target_score = createScore("on_target_score");
+                on_target_score.style.position = "absolute";
+                on_target_score.style.left = "50px";
+                eval_tag.appendChild(on_target_score);
+
+                var scenario_score = createScore("Scenario_score");
+                scenario_score.style.position = "absolute";
+                scenario_score.style.left = "150px";
+                eval_tag.appendChild(scenario_score);
+
+                var movement_score = createScore("Movement_score");
+                movement_score.style.position = "absolute";
+                movement_score.style.left = "215px";
+                eval_tag.appendChild(movement_score);
+
+                var action_score = createScore("Action_score");
+                action_score.style.position = "absolute";
+                action_score.style.left = "288px";
+                eval_tag.appendChild(action_score);
+
+                var talk_score = createScore("Talk_score");
+                talk_score.style.position = "absolute";
+                talk_score.style.right = "180px";
+                eval_tag.appendChild(talk_score);
+
+                var expression_score = createScore("Expression_score");
+                expression_score.style.position = "absolute";
+                expression_score.style.right = "127px";
+                eval_tag.appendChild(expression_score);
+
+                eval_tag.style.height = "30px";
+                RightGrid.appendChild(eval_tag);
+            }
+
+        }
+
+        function insertAfter(newEl, targetEl) {
+            var parentEl = targetEl.parentNode;
+            if (parentEl.lastChild == targetEl) {
+                parentEl.appendChild(newEl);
+            } else {
+                parentEl.insertBefore(newEl, targetEl.nextSibling);
+            }
+        }
+
+        function createMovement() {
+            var select = document.createElement("select");
+            var option = null;
+            for (var key in movement_list) {
+                option = document.createElement("option");
+                option.value = key;
+                option.innerHTML = movement_list[key];
+                select.appendChild(option);
+            }
+            /*option = document.createElement("option");
+            option.value = "move front";
+            option.innerHTML = "向前走ssssssssssssssssssssssssss";
+            select.appendChild(option);
+
+            option = document.createElement("option");
+            option.value = "move back";
+            option.innerHTML = "向后走";
+            select.appendChild(option);*/
+
+            select.style.marginLeft = '90px';
+            select.style.marginTop = '2px';
+            select.style.marginBottom = '2px';
+            select.style.width = "65px";
+            select.style.height = "30px";
+            select.tagtype = "Movement";
+            return select;
+        }
+
+        function createAction() {
+            var select = document.createElement("select");
+            var option = null;
+            for (var key in action_list) {
+                option = document.createElement("option");
+                option.value = key;
+                option.innerHTML = action_list[key];
+                select.appendChild(option);
+            }
+
+            /*option = document.createElement("option");
+            option.value = "left hand";
+            option.innerHTML = "举左手wwwwwwwwwwwwwwwwwwwwwwwwwww";
+            select.appendChild(option);
+
+            option = document.createElement("option");
+            option.value = "right hand";
+            option.innerHTML = "举右手";
+            select.appendChild(option);*/
+
+            select.style.marginLeft = '2px';
+            select.style.marginTop = '2px';
+            select.style.marginBottom = '2px';
+            select.style.width = "70px";
+            select.style.height = "30px";
+            select.tagtype = "Action";
+            return select;
+        }
+
+        function createExpression() {
+            var select = document.createElement("select");
+            var option = null;
+
+            for (var key in expression_list) {
+                option = document.createElement("option");
+                option.value = key;
+                option.innerHTML = expression_list[key];
+                select.appendChild(option);
+            }
+
+            /*option = document.createElement("option");
+            option.value = "smile";
+            option.innerHTML = "微笑11111111111111111111111111111";
+            select.appendChild(option);
+
+            option = document.createElement("option");
+            option.value = "cry";
+            option.innerHTML = "大哭";
+            select.appendChild(option);*/
+            select.style.marginLeft = '2px';
+            select.style.marginTop = '2px';
+            select.style.marginBottom = '2px';
+            select.style.width = "50px";
+            select.style.height = "30px";
+            select.tagtype = "Expression";
+            return select;
+        }
+
+        function createScore(tag_type) {
+            var select = document.createElement("select");
+            var option = null;
+
+            for (var key in score_list) {
+                option = document.createElement("option");
+                option.value = key;
+                option.innerHTML = score_list[key];
+                select.appendChild(option);
+            }
+
+            select.style.marginLeft = '2px';
+            select.style.marginTop = '2px';
+            select.style.marginBottom = '2px';
+            select.style.width = "30px";
+            select.style.height = "30px";
+            select.tagtype = tag_type;
+            return select;
+        }
+
+        function bt_savetag_callback() {
+            if (Player.readyState != 4) {
+                alert("请先选择视频文件！");
+                return;
+            }
+            var file_lines = ""
+            var right_div = document.getElementById('right');
+            var tag_para = right_div.firstChild;
+            if (tag_para == null) {
+                alert("尚未添加任何标记！");
+                return;
+            }
+            var line = get_taginfo(tag_para);
+            if (line == "ID未填") {
+                return
+            }
+            file_lines += JSON.stringify(line) + "\n";
+            /*console.log(tag_para);
+            console.log("-----------------------------------------");*/
+            while (tag_para != right_div.lastChild) {
+                tag_para = tag_para.nextSibling;
+                var line = get_taginfo(tag_para);
+                file_lines += JSON.stringify(line) + "\n";
+                /*console.log(tag_para);
+                console.log("-----------------------------------------");*/
+            }
+
+            console.log(file_lines);
+            /*file_lines = file_name + "\n" + file_lines;*/
+            var blob = new Blob([file_lines], {
+                type: "text/plain;charset=utf-8"
+            });
+            var time_now = RiQi(new Date().getTime());
+            var tagfile = file_name + "_" + time_now + ".txt";
+            if (is_eval) {
+                tagfile = "eval_" + tagfile;
+            }
+            console.log(tagfile);
+            saveAs(blob, tagfile);
+        }
+
+        function bt_video_play(e) {
+            Player.play();
+        }
+
+        function bt_video_pause(e) {
+            Player.pause();
+        }
+
+        function bt_video_speed(e) {
+            var current_speed = Player.playbackRate;
+            if (current_speed < 8) {
+                Player.playbackRate = Player.playbackRate * 2;
+            } else if (current_speed == 8) {
+                Player.playbackRate = 1;
+            }
+
+            var bt_speed = document.getElementById('bt_speed');
+            bt_speed.innerHTML = "速度:x" + Player.playbackRate;
+            console.log(Player.playbackRate);
+        }
+
+        function bt_eval_toggle(e) {
+            var bt_eval = document.getElementById("bt_eval");
+            if (is_eval) {
+                bt_eval.innerHTML = "评分OFF";
+                is_eval = false;
+            } else {
+                bt_eval.innerHTML = "评分ON";
+                is_eval = true;
+            }
+        }
+
+        function bt_review_toggle(e) {
+            var bt_review = document.getElementById("bt_review");
+            if (is_review) {
+                bt_review.innerHTML = "查看回溯OFF";
+                is_review = false;
+            } else {
+                bt_review.innerHTML = "查看回溯ON";
+                is_review = true;
+            }
+        }
+
+        function bt_opendir_callback(e) {
+            location.href = "VideoFiles"
+        }
+
+        function RiQi(sj) {
+            var now = new Date(sj);
+            var year = now.getFullYear();
+            var month = now.getMonth() + 1;
+            var date = now.getDate();
+            var hour = now.getHours();
+            var minute = now.getMinutes();
+            var second = now.getSeconds();
+            return year + "-" + month + "-" + date + "_" + hour + "." + minute + "." + second;
+
+        }
+
+        function get_taginfo(tag_para) {
+            var line = {};
+            var tag_elements = tag_para.firstChild;
+            while (true) {
+                // console.log(tag_elements.tagtype);
+                // console.log(tag_elements);
+                switch (tag_elements.tagtype) {
+                    case "Time":
+                        line.Time = tag_elements.innerHTML;
+                        break;
+                    case "Scenario":
+                        line.Scenario = tag_elements.value;
+                        break;
+                    case "Movement":
+                        line.Movement = tag_elements.value;
+                        break;
+                    case "Action":
+                        line.Action = tag_elements.value;
+                        break;
+                    case "Talk":
+                        line.Talk = tag_elements.value;
+                        break;
+                    case "Expression":
+                        line.Expression = tag_elements.value;
+                        break;
+                    case "on_target_score":
+                        line.Target_score = tag_elements.value;
+                        break;
+                    case "Scenario_score":
+                        line.Scenario_score = tag_elements.value;
+                        break;
+                    case "Movement_score":
+                        line.Movement_score = tag_elements.value;
+                        break;
+                    case "Action_score":
+                        line.Action_score = tag_elements.value;
+                        break;
+                    case "Talk_score":
+                        line.Talk_score = tag_elements.value;
+                        break;
+                    case "Expression_score":
+                        line.Expression_score = tag_elements.value;
+                        break;
+                    case "ID":
+                        line.ID = tag_elements.value
+                        if (line.ID == "" || line.ID == undefined) {
+                            alert('请查看ID是否填写')
+                            return "ID未填"
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                if (tag_elements != tag_para.lastChild)
+                    tag_elements = tag_elements.nextSibling;
+                else
+                    break;
+            }
+            return line;
+        }
+    </script>
+</head>
+
+<body data-gr-c-s-loaded="true">
+    <div id="main" style="width:100%;">
+
+        <div id="left" style="position:fixed; background:#afafaf; width:45%; height:98%;">
+            <p style="position:absolute;top:2px;left:5px;line-height:1px;margin-top:1px;margin-bottom:1px;width:100%;height:40px;">
+
+                <br>
+                <label style="position:absolute;margin-top:9px;font-size:15px">视频文件:</label>
+                <input id="File" type="file" accept="video/mp4" style="margin-left:70px;width:80%;float:center;font-size:15px">
+                <br>
+                <label style="position:absolute;margin-top:9px;font-size:15px">标注文件:</label>
+                <input id="TagFile" type="file" accept="text/plain" style="margin-left:70px;width:80%;float:center;font-size:15px">
+                <br>
+                <button id="bt_addtag" type="button" onclick="bt_video_play()" style="font-size:15px">播放</button>
+                <button id="bt_addtag" type="button" onclick="bt_video_pause()" style="font-size:15px">暂停</button>
+                <button id="bt_speed" type="button" onclick="bt_video_speed()" style="font-size:15px">速度:x1</button>
+                <button id="bt_eval" type="button" onclick="bt_eval_toggle()" style="font-size: 15px">评分OFF</button>
+                <button id="bt_review" type="button" onclick="bt_review_toggle()" style="font-size: 15px">查看回溯ON</button>
+            </p>
+            <p style="position:absolute;bottom:65px;top:85px;line-height:1px;margin-top:1px;margin-bottom:1px;width:100%;background:#000000;font-size:30px">
+                <video id="Player" autoplay="autoplay" controls="true" style="position:relative;width:100%;height:100%;">
+                </video>
+            </p>
+            <p style="position:absolute;bottom:2px;line-height:1px;margin-top:1px;margin-bottom:1px;width:100%;height:60px;">
+                <button id="bt_addtag" type="button" onclick="bt_addtag_callback(event, false)" style="margin-left:5%;margin-right:2%;margin-top:5px;margin-bottom:5px;width:40%;height:50px;font-size:30px">新增标记</button>
+                <button id="bt_addtag" type="button" onclick="bt_savetag_callback()" style="margin-left:2%;margin-right:5%;margin-top:5px;margin-bottom:5px;width:40%;height:50px;font-size:30px">保存标记</button>
+            </p>
+        </div>
+
+        <div style="position:relative; left:5px; right:1px; background:#ffffff;width:54%;float:right;">
+            <div style="position:fixed;width:54%">
+                <label style="position:absolute;left:20px;font-size:20px">时间</label>
+                <label style="position:absolute;left:100px;font-size:20px">ID</label>
+                <label style="position:absolute;left:185px;font-size:20px">移动</label>
+                <label style="position:absolute;left:255px;font-size:20px">动作</label>
+                <label style="position:absolute;left:325px;font-size:20px">说话</label>
+                <label style="position:absolute;right:150px;font-size:20px">表情</label>
+            </div>
+            <div id="right" style="position:fixed;top:35px;overflow:scroll;height:95%;width:54%">
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

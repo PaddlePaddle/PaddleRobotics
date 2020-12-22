@@ -6,7 +6,7 @@ paddleRobotics是基于paddle的机器人开源算法库集，包括人机交互
 ## 人机交互
 #### 主动多模交互技术TFVT-HRI
 主动多模交互技术是通过视觉、语音、触摸传感器等输入机器人进行决策、输出表情、动作、声音等响应。
-* [TFVT-HRI](HRI/TFVF_HRI/README.md)
+* [TFVT-HRI](HRI/TFVT_HRI/README.md)
 
 ## 复杂运动控制
 #### 四足机器人

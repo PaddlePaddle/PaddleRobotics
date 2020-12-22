@@ -6,7 +6,7 @@ paddleRobotics is an open source algorithm library for robots based on paddle, i
 ## Human–Machine Interaction 
 #### Multi-mode Interaction 
 multi-mode interaction technology uses vision, voice, touch sensors and other input robots to make decisions and output responses such as expressions, actions, and sounds.
-* [TFVT-HRI](HRI/TFVF_HRI/README.md)
+* [TFVT-HRI](HRI/TFVT_HRI/README.md)
 
 ## Complex Motion Control
 #### Quadruped robot motion control 

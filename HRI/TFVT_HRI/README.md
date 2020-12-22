@@ -1,8 +1,22 @@
-# TFVF-HRI
+# TFVT-HRI
 
-[Interactive Learning for Robot Proactive Social Greetings](https://arxiv.org/abs/2012.04832)
+TransFormer with Visual Tokens for Human-Robot Interaction (TFVT-HRI).
+
+```txt
+@misc{xue2020proactive,
+      title={Proactive Interaction Framework for Intelligent Social Receptionist Robots},
+      author={Yang Xue and Fan Wang and Hao Tian and Min Zhao and Jiangyong Li and Haiqing Pan and Yueqiang Dong},
+      year={2020},
+      eprint={2012.04832},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2012.04832}
+}
+```
 
 ![avatar](./data/doc_imgs/hi.gif)
+
+![arch](./data/doc_imgs/arch.png)
 
 ## Preparation
 

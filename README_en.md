@@ -1,11 +1,11 @@
 [简体中文](README.md) | English
 
 # PaddleRobotics
-paddleRobotics is an open source algorithm library for robots based on paddle, including open source parts such as human-computer interaction, complex motion control, environment perception, slam positioning and navigation.
+PaddleRobotics is an open source algorithm library for robots based on paddle, including open source parts such as human-computer interaction, complex motion control, environment perception, slam positioning and navigation.
 
 ## Human–Machine Interaction 
 #### Multi-mode Interaction 
-multi-mode interaction technology uses vision, voice, touch sensors and other input robots to make decisions and output responses such as expressions, actions, and sounds.
+Multi-mode interaction technology uses vision, voice, touch sensors and other input robots to make decisions and output responses such as expressions, actions, and sounds.
 * [TFVT-HRI](HRI/TFVT_HRI/README.md)
 
 ## Complex Motion Control
@@ -21,4 +21,4 @@ Through the perception of environmental information, the current passable area j
 PaddleRobotics is released under the Apache 2.0 license.
 
 ## Contributing
-contributions are highly welcomed and we would really appreciate your feedback!!
+Contributions are highly welcomed and we would really appreciate your feedback!!

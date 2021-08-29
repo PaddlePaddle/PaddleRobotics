@@ -32,6 +32,7 @@ We use train.py for training. The arguments you may need to modify are as below.
 | render               | bool     | Render or not.        |
 | act_bound               | float     | Action bound for neural network policy.        |
 | load               | string     | The path of neural network model to load.        |
+
 For example, train ETG-RL in stairstair.
 ```python0
 python train.py --task_mode stairstair --ETG_path data/origin_ETG/ESStair_origin.npz

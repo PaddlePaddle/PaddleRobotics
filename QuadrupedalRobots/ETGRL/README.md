@@ -62,7 +62,7 @@ After training, we get an expert policy with full state observation. Then we use
 | ref_path               | string     | The path of expert neural network model file.         |
 | sensor_noise               | bool     | Add noise to the sensor observation or not.         |
 
-for example, for stairstair task, we can use the following script.
+For example, for stairstair task, we can use the following script.
 ```python
 python BCtrain.py --task_mode stairstair --ETG_path data/model/StairStair_3_itr_960231.npz --ref_agent data/model/StairStair_3_itr_960231.pt
 ```
@@ -81,6 +81,7 @@ Then, we should move the .npy file and neural network policy into the directory 
 | ETG_path                   | string   | The path of ETG .npy file.                |
 | load            | string     | The path of neural network policy model.                |
 | max_time            | float     | The time of duration to deploy the policy.               |
+
 For exmaple, deploy model in stairstair
 ```python
 cd deployment

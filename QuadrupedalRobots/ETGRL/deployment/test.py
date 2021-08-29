@@ -45,7 +45,7 @@ def get_obs_dim(sensor_mode):
             obs_dim += 3
     if "contact" in sensor_mode and sensor_mode["contact"]:
         obs_dim += 4
-    if "CPG" in sensor_mode and sensor_mode["CPG"]:
+    if "ETG" in sensor_mode and sensor_mode["ETG"]:
         obs_dim += 12
     if "RNN" in sensor_mode.keys() and sensor_mode["RNN"]["time_steps"]>0 and sensor_mode["RNN"]["mode"]=="stack":
         obs_dim *= (sensor_mode["RNN"]["time_steps"]+1)
@@ -62,7 +62,7 @@ def main():
     sensor_mode['motor'] = args.sensor_motor
     sensor_mode["imu"] = args.sensor_imu
     sensor_mode["contact"] = args.sensor_contact
-    sensor_mode["CPG"] = args.sensor_CPG
+    sensor_mode["ETG"] = args.sensor_ETG
     rnn_config = {}
     rnn_config["time_steps"] = args.timesteps
     rnn_config["time_interval"] = args.timeinterval
@@ -89,11 +89,11 @@ def main():
     p = bullet_client.BulletClient(connection_mode=pybullet.DIRECT)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
-    gait_action = np.load(args.CPG_path)
+    gait_action = np.load(args.ETG_path)
     robot = a1_robot.A1Robot(pybullet_client=p, action_repeat=1)
     env = EnvWrapper.EnvWrapper(robot=robot,dt=args.dt,sensor_mode=sensor_mode,gait=args.gait,
                                 normal= args.normal,enable_action_filter=args.enable_action_filter,
-                                CPG_data = copy(gait_action))
+                                ETG_data = copy(gait_action))
     obs,info = env.reset()
     # action = agent.predict(obs)*act_bound
     
@@ -105,12 +105,12 @@ def main():
     for i in range(int(args.max_time*100)):
         t_start = time.clock()
         ref_action = gait_action[i]
-        # if args.sensor_CPG:
+        # if args.sensor_ETG:
         #     if args.normal:
-        #         CPG_act = (ref_action-CPG_mean)/CPG_std
+        #         ETG_act = (ref_action-ETG_mean)/ETG_std
         #     else:
-        #         CPG_act = copy(ref_action)
-        #     obs = np.concatenate((obs,CPG_act),axis=0)
+        #         ETG_act = copy(ref_action)
+        #     obs = np.concatenate((obs,ETG_act),axis=0)
         action = agent.predict(obs)*act_bound+ref_action
         # action = np.zeros(12) + ref_action
         # print("t_now:",time.clock()-t_start)
@@ -129,13 +129,13 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--suffix",type=str,default="exp0")
-    parser.add_argument("--CPG_path",type=str,default="exp/stair_6_21/gait_action_list_CPG_stair.npy")
+    parser.add_argument("--ETG_path",type=str,default="exp/stair_6_21/gait_action_list_ETG_stair.npy")
     parser.add_argument("--sensor_dis",type=int,default=0)
     parser.add_argument("--sensor_motor",type=int,default=1)
     parser.add_argument("--sensor_imu",type=int,default=1)
     parser.add_argument("--sensor_contact",type=int,default=1)
     parser.add_argument("--sensor_footpose",type=int,default=0)
-    parser.add_argument("--sensor_CPG",type=int,default=1)
+    parser.add_argument("--sensor_ETG",type=int,default=1)
     parser.add_argument("--timesteps",type=int,default=5)
     parser.add_argument("--timeinterval",type=int,default=1)
     parser.add_argument("--RNN_mode",type=str,default="None")

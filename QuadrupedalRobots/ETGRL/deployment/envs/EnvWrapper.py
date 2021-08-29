@@ -16,8 +16,8 @@ mode_map ={"pose":robot_config.MotorControlMode.POSITION,
             "torque":robot_config.MotorControlMode.TORQUE,
             "traj":robot_config.MotorControlMode.POSITION}
 from tqdm import tqdm
-def EnvWrapper(robot,dt,sensor_mode,gait,normal,enable_action_filter,CPG_data):
-    env = SimpleEnv(robot,sensor_mode,normal,CPG_data)
+def EnvWrapper(robot,dt,sensor_mode,gait,normal,enable_action_filter,ETG_data):
+    env = SimpleEnv(robot,sensor_mode,normal,ETG_data)
     if gait:
         env = GaitWrapper(env,robot,gait,dt)
     env = ObservationWrapper(env,robot,sensor_mode)
@@ -27,13 +27,13 @@ def EnvWrapper(robot,dt,sensor_mode,gait,normal,enable_action_filter,CPG_data):
 
 
 class SimpleEnv(object):
-    def __init__(self,robot,sensor_mode,normal,CPG_data=None):
+    def __init__(self,robot,sensor_mode,normal,ETG_data=None):
         self.robot = robot
         self.sensor_mode = sensor_mode
         self.obs_dim = 0
         self.last_action = np.array([0,0.9,-1.8]*4)
         self.normal = normal
-        self.CPG_data = CPG_data
+        self.ETG_data = ETG_data
         if "motor" in self.sensor_mode:
             if self.sensor_mode["motor"] == 1:
                 self.obs_dim += 24
@@ -45,14 +45,14 @@ class SimpleEnv(object):
             self.obs_dim += 6
         if "contact" in self.sensor_mode and self.sensor_mode["contact"]:
             self.obs_dim += 4
-        if "CPG" in self.sensor_mode and self.sensor_mode["contact"]:
+        if "ETG" in self.sensor_mode and self.sensor_mode["contact"]:
             self.obs_dim += 12
 
-        self.CPG_mean = np.array([2.1505982e-02,  3.6674485e-02, -6.0444288e-02,
+        self.ETG_mean = np.array([2.1505982e-02,  3.6674485e-02, -6.0444288e-02,
                         2.4625482e-02,  1.5869144e-02, -3.2513142e-02,  2.1506395e-02,
                         3.1869926e-02, -6.0140789e-02,  2.4625063e-02,  1.1628972e-02,
                         -3.2163858e-02])
-        self.CPG_std = np.array([4.5967497e-02,2.0340437e-01, 3.7410179e-01, 4.6187632e-02, 1.9441207e-01, 3.9488649e-01,
+        self.ETG_std = np.array([4.5967497e-02,2.0340437e-01, 3.7410179e-01, 4.6187632e-02, 1.9441207e-01, 3.9488649e-01,
                                 4.5966785e-02 ,2.0323379e-01, 3.7382501e-01, 4.6188373e-02 ,1.9457331e-01, 3.9302582e-01])
 
     def get_obs_dim(self):
@@ -101,11 +101,11 @@ class SimpleEnv(object):
         for key, value in observation_dict.items():
             observations.append(np.asarray(value).flatten())
         flat_observations = np.concatenate(observations)
-        if "CPG" in self.sensor_mode and self. sensor_mode["CPG"]:
-            CPG_output = self.CPG_data[self.iter]
+        if "ETG" in self.sensor_mode and self. sensor_mode["ETG"]:
+            ETG_output = self.ETG_data[self.iter]
             if self.normal:
-                CPG_output = (CPG_output-self.CPG_mean)/self.CPG_std
-            flat_observations = np.concatenate((flat_observations,CPG_output),axis=0)
+                ETG_output = (ETG_output-self.ETG_mean)/self.ETG_std
+            flat_observations = np.concatenate((flat_observations,ETG_output),axis=0)
         observation_dict["real_action"] = self.last_action
         return flat_observations,observation_dict
 

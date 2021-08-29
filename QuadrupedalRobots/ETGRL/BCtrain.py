@@ -22,8 +22,7 @@ from model.mujoco_model import MujocoModel
 from model.mujoco_agent import MujocoAgent
 from alg.sac import SAC
 from alg.BC import BC
-from env.MonitorEnv import EnvWrapper,Param_Dict,Random_Param_Dict
-from model.CPG_model import CPG_model,CPG_layer
+from rlschool.quadrupedal.envs.env_wrappers.MonitorEnv import Param_Dict,Random_Param_Dict
 from rlschool.quadrupedal.robots import robot_config
 from rlschool.quadrupedal.envs.env_builder import SENSOR_MODE
 import rlschool
@@ -213,9 +212,9 @@ def main():
     sensor_mode['motor'] = args.sensor_motor
     sensor_mode["imu"] = args.sensor_imu
     sensor_mode["contact"] = args.sensor_contact
-    sensor_mode["CPG"] = args.sensor_CPG
+    sensor_mode["ETG"] = args.sensor_ETG
     sensor_mode["footpose"] = args.sensor_footpose
-    sensor_mode["CPG_obs"] = args.sensor_CPG_obs
+    sensor_mode["ETG_obs"] = args.sensor_ETG_obs
     sensor_mode["dynamic_vec"] = args.sensor_dynamic
     sensor_mode["force_vec"] = args.sensor_exforce
     rnn_config = {}
@@ -228,12 +227,10 @@ def main():
     dynamic_param = np.load("data/sigma0.5_exp0_dynamic_param9027.npy")
     dynamic_param = param2dynamic_dict(dynamic_param)
     env =  rlschool.make_env('Quadrupedal',task=args.task_mode,motor_control_mode=mode,render=render,sensor_mode=sensor_mode,
-                        normal=args.normal,dynamic_param=dynamic_param)
-    env =  EnvWrapper(env=env,param=param,sensor_mode=sensor_mode,normal=args.normal,
-                        CPG_T=args.CPG_T,reward_p=args.reward_p,CPG_path=args.CPG_path,random_param=random_param,
-                        CPG_T2=args.CPG_T2,CPG_H=args.CPG_H,act_mode=args.act_mode,vel_d=args.vel_d,
-                        enable_action_filter=args.enable_action_filter,task_mode=args.task_mode,
-                        step_y=args.step_y)
+                        normal=args.normal,dynamic_param=dynamic_param,reward_param=param,
+                        ETG=args.ETG,ETG_T=args.ETG_T,reward_p=args.reward_p,ETG_path=args.ETG_path,random_param=random_param,
+                        ETG_H = args.ETG_H, vel_d = args.vel_d,step_y=args.step_y,
+                        enable_action_filter=args.enable_action_filter)
     e_step = args.e_step
     obs_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
@@ -331,7 +328,7 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--outdir",type=str,default="video")
+    parser.add_argument("--outdir",type=str,default="BCtrain_log")
     parser.add_argument("--max_steps",type=int,default=1e6)
     parser.add_argument("--epsilon",type=float,default=0.4)
     parser.add_argument("--gamma",type=float,default=0.95)
@@ -345,14 +342,15 @@ if __name__ == "__main__":
     parser.add_argument("--render", type=int, default=0, help="render or not")
     parser.add_argument("--normal",type=int,default=1)
     parser.add_argument("--vel_d",type=float,default=0.6)
-    parser.add_argument("--CPG_T",type=float,default=0.5)
+    parser.add_argument("--ETG",type=int,default=1)
+    parser.add_argument("--ETG_T",type=float,default=0.5)
     parser.add_argument("--reward_p",type=float,default=1)
-    parser.add_argument("--CPG_T2",type=float,default=0.5)
+    parser.add_argument("--ETG_T2",type=float,default=0.5)
     parser.add_argument("--e_step",type=int,default=400)
     parser.add_argument("--act_mode",type=str,default="traj")
-    parser.add_argument("--ref_agent",type=str,default="data/StairSlope_5_itr_1360385.pt")
-    parser.add_argument("--CPG_path",type=str,default="data/StairSlope_5_itr_1360385.npz")
-    parser.add_argument("--CPG_H",type=int,default=20)
+    parser.add_argument("--ref_agent",type=str,default="data/model/StairStair_3_itr_960231.pt")
+    parser.add_argument("--ETG_path",type=str,default="data/model/StairStair_3_itr_960231.npz")
+    parser.add_argument("--ETG_H",type=int,default=20)
     parser.add_argument("--stand",type=float,default=0)
     parser.add_argument("--torso",type=float,default=1)
     parser.add_argument("--up",type=float,default=0.1)
@@ -364,9 +362,9 @@ if __name__ == "__main__":
     parser.add_argument("--sensor_motor",type=int,default=1)
     parser.add_argument("--sensor_imu",type=int,default=1)
     parser.add_argument("--sensor_contact",type=int,default=1)
-    parser.add_argument("--sensor_CPG",type=int,default=1)
+    parser.add_argument("--sensor_ETG",type=int,default=1)
     parser.add_argument("--sensor_footpose",type=int,default=0)
-    parser.add_argument("--sensor_CPG_obs",type=int,default=0)
+    parser.add_argument("--sensor_ETG_obs",type=int,default=0)
     parser.add_argument("--sensor_dynamic",type=int,default=0)
     parser.add_argument("--sensor_exforce",type=int,default=0)
     parser.add_argument("--sensor_noise",type=int,default=1)

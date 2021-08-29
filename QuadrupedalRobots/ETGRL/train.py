@@ -21,8 +21,8 @@ from parl.utils import logger, summary, ReplayMemory
 from model.mujoco_model import MujocoModel
 from model.mujoco_agent import MujocoAgent
 from alg.sac import SAC
-from model.CPG_model import CPG_layer,CPG_model
-from env.MonitorEnv import EnvWrapper,Param_Dict,Random_Param_Dict
+from rlschool.quadrupedal.envs.utilities.ETG_model import ETG_layer,ETG_model
+from rlschool.quadrupedal.envs.env_wrappers.MonitorEnv import Param_Dict,Random_Param_Dict
 from rlschool.quadrupedal.robots import robot_config
 from rlschool.quadrupedal.envs.env_builder import SENSOR_MODE
 from copy import copy
@@ -78,8 +78,8 @@ def LS_sol(A,b,precision=1e-4,alpha=0.05,lamb=1,w0=None):
         i += 1
     return x
 
-def Opt_with_points(CPG,CPG_T=0.4,points=None,b0=None,w0=None,precision=1e-4,lamb=0.5,plot=False,**kwargs):
-    ts = [0.5*CPG_T+0.1,0,0.05,0.1,0.15,0.2]
+def Opt_with_points(ETG,ETG_T=0.4,points=None,b0=None,w0=None,precision=1e-4,lamb=0.5,plot=False,**kwargs):
+    ts = [0.5*ETG_T+0.1,0,0.05,0.1,0.15,0.2]
     if points is None:
         Steplength = kwargs["Steplength"] if "Steplength" in kwargs else 0.05
         Footheight = kwargs["Footheight"] if "Footheight" in kwargs else 0.08
@@ -88,7 +88,7 @@ def Opt_with_points(CPG,CPG_T=0.4,points=None,b0=None,w0=None,precision=1e-4,lam
                     [Steplength*1.5,0.6*Footheight],[Steplength,-Penetration*0.5]])
     obs = []
     for t in ts:
-        v = CPG.update(t)
+        v = ETG.update(t)
         obs.append(v)
     obs = np.array(obs).reshape(-1,20)
     if b0 is None:
@@ -104,7 +104,7 @@ def Opt_with_points(CPG,CPG_T=0.4,points=None,b0=None,w0=None,precision=1e-4,lam
         x2 = LS_sol(A=obs,b=points_t[:,1].reshape(-1,1),precision=precision,alpha=0.05,lamb=lamb,w0=w0[-1,:].reshape(-1,1))
     w = np.stack((x1,x2),axis=0).reshape(2,-1)
     # if plot:
-    #     plot_gait(w,b,CPG,points)
+    #     plot_gait(w,b,ETG,points)
     w_ = np.stack((x1,np.zeros((20,1)),x2),axis=0).reshape(3,-1)
     b_ = np.array([b[0],0,b[1]])
     return w_,b_,points
@@ -128,7 +128,7 @@ def param2dynamic_dict(params):
 # Run episode for training
 def run_train_episode(agent, env, rpm,max_step,action_bound,w=None,b=None):
     action_dim = env.action_space.shape[0]
-    obs,info = env.reset(CPG_w=w,CPG_b=b,x_noise=args.x_noise)
+    obs,info = env.reset(ETG_w=w,ETG_b=b,x_noise=args.x_noise)
     done = False
     episode_reward, episode_steps = 0, 0
     infos = {}
@@ -183,7 +183,7 @@ def run_evaluate_episodes(agent, env,max_step,action_bound,w=None,b=None):
     avg_reward = 0.
     infos = {}
     steps_all = 0
-    obs,info = env.reset(CPG_w=w,CPG_b=b,x_noise=args.x_noise)
+    obs,info = env.reset(ETG_w=w,ETG_b=b,x_noise=args.x_noise)
     done = False
     steps = 0
     while not done:
@@ -212,7 +212,7 @@ def run_evaluate_episodes(agent, env,max_step,action_bound,w=None,b=None):
 
 def run_EStrain_episode(agent, env, rpm,max_step,action_bound,w=None,b=None):
     action_dim = env.action_space.shape[0]
-    obs,info = env.reset(CPG_w=w,CPG_b=b,x_noise=args.x_noise)
+    obs,info = env.reset(ETG_w=w,ETG_b=b,x_noise=args.x_noise)
     done = False
     episode_reward, episode_steps = 0, 0
     infos = {}
@@ -264,8 +264,8 @@ def main():
     sensor_mode['motor'] = args.sensor_motor
     sensor_mode["imu"] = args.sensor_imu
     sensor_mode["contact"] = args.sensor_contact
-    sensor_mode["CPG"] = args.sensor_CPG
-    sensor_mode["CPG_obs"] = args.sensor_CPG_obs
+    sensor_mode["ETG"] = args.sensor_ETG
+    sensor_mode["ETG_obs"] = args.sensor_ETG_obs
     sensor_mode["footpose"] = args.sensor_footpose
     sensor_mode["dynamic_vec"] = args.sensor_dynamic
     sensor_mode["force_vec"] = args.sensor_exforce
@@ -278,36 +278,35 @@ def main():
     render = True if (args.eval or args.render) else False
     mode = mode_map[args.act_mode]
     ##ES init
-    if os.path.exists(args.CPG_path):
-        CPG_info = np.load(args.CPG_path)
-        CPG_param_init = CPG_info["param"].reshape(-1)
-        print("CPG_param_init:",CPG_param_init.shape)
+    if os.path.exists(args.ETG_path):
+        ETG_info = np.load(args.ETG_path)
+        ETG_param_init = ETG_info["param"].reshape(-1)
+        print("ETG_param_init:",ETG_param_init.shape)
     else:
-        args.CPG_path = "data/zero_param.npz"
-        CPG_param_init = np.zeros(12)
-    ES_solver = SimpleGA(CPG_param_init.shape[0],
+        args.ETG_path = "data/zero_param.npz"
+        ETG_param_init = np.zeros(12)
+    ES_solver = SimpleGA(ETG_param_init.shape[0],
                 sigma_init=args.sigma,
                 sigma_decay=args.sigma_decay,
                 sigma_limit=0.005,
                 elite_ratio=0.1,
                 weight_decay=0.005,
                 popsize=args.popsize,
-                param = CPG_param_init)
+                param = ETG_param_init)
     phase = np.array([-np.pi/2,0])
-    CPG_agent = CPG_layer(args.CPG_T,0.026,args.CPG_H,0.04,phase,0.2,args.CPG_T2)
-    w0,b0,prior_points = Opt_with_points(CPG=CPG_agent,CPG_T=args.CPG_T,
+    ETG_agent = ETG_layer(args.ETG_T,0.026,args.ETG_H,0.04,phase,0.2,args.ETG_T2)
+    w0,b0,prior_points = Opt_with_points(ETG=ETG_agent,ETG_T=args.ETG_T,
                                             Footheight=args.footheight,Steplength=args.steplen)
-    if not os.path.exists(args.CPG_path):
-        np.savez(args.CPG_path,w=w0,b=b0,param=prior_points)
+    if not os.path.exists(args.ETG_path):
+        np.savez(args.ETG_path,w=w0,b=b0,param=prior_points)
     dynamic_param = np.load("data/sigma0.5_exp0_dynamic_param9027.npy")
     dynamic_param = param2dynamic_dict(dynamic_param)
+
     env =  rlschool.make_env('Quadrupedal',task=args.task_mode,motor_control_mode=mode,render=render,sensor_mode=sensor_mode,
-                        normal=args.normal,gait=args.gait,dynamic_param=dynamic_param)
-    env =  EnvWrapper(env=env,param=param,sensor_mode=sensor_mode,normal=args.normal,
-                        CPG_T=args.CPG_T,reward_p=args.reward_p,CPG_path=args.CPG_path,random_param=random_param,
-                        CPG_T2=args.CPG_T2,CPG_H=args.CPG_H,act_mode=args.act_mode,vel_d=args.vel_d,vel_mode=args.vel_mode,
-                        enable_action_filter=args.enable_action_filter,task_mode=args.task_mode,
-                        step_y=args.step_y)
+                        normal=args.normal,dynamic_param=dynamic_param,reward_param=param,
+                        ETG=args.ETG,ETG_T=args.ETG_T,reward_p=args.reward_p,ETG_path=args.ETG_path,random_param=random_param,
+                        ETG_H = args.ETG_H, vel_d = args.vel_d,step_y=args.step_y,
+                        enable_action_filter=args.enable_action_filter)
     e_step = args.e_step
     obs_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
@@ -347,10 +346,10 @@ def main():
         t_steps = 0
 
         #init w,b
-        CPG_best_param = ES_solver.get_best_param()
-        points_add = CPG_best_param.copy().reshape(-1,2)
+        ETG_best_param = ES_solver.get_best_param()
+        points_add = ETG_best_param.copy().reshape(-1,2)
         new_points = prior_points+points_add
-        w,b,_ = Opt_with_points(CPG=CPG_agent,CPG_T=args.CPG_T,w0=w0,b0=b0,points=new_points)
+        w,b,_ = Opt_with_points(ETG=ETG_agent,ETG_T=args.ETG_T,w0=w0,b0=b0,points=new_points)
         ES_step = 0
         while total_steps < args.max_steps:
             # Train episode
@@ -388,13 +387,13 @@ def main():
                 # if not os.path.exists(path):
                 #     os.mkdir(path)
                 agent.save(path) 
-                np.savez(os.path.join(outdir,'itr_{:d}.npz'.format(int(total_steps))),w=w,b=b,param=CPG_best_param)    
+                np.savez(os.path.join(outdir,'itr_{:d}.npz'.format(int(total_steps))),w=w,b=b,param=ETG_best_param)    
     
             if args.ES and (total_steps + 1) // ES_EVERY_STEPS >= ES_test_flag and total_steps >= WARMUP_STEPS:
                 while (total_steps + 1) // ES_EVERY_STEPS >= ES_test_flag:
                     ES_test_flag += 1
                     best_reward,avg_step,info = run_EStrain_episode(agent, env,rpm,400,act_bound,w,b)
-                    best_param = CPG_best_param.copy().reshape(-1)
+                    best_param = ETG_best_param.copy().reshape(-1)
                     for ei in range(ES_TRAIN_STEPS):
                         solutions = ES_solver.ask()
                         fitness_list = []
@@ -405,7 +404,7 @@ def main():
                         for solution in solutions:
                             points_add = solution.reshape(-1,2)
                             new_points = prior_points+points_add
-                            w,b,_ = Opt_with_points(CPG=CPG_agent,CPG_T=args.CPG_T,w0=w0,b0=b0,points=new_points)
+                            w,b,_ = Opt_with_points(ETG=ETG_agent,ETG_T=args.ETG_T,w0=w0,b0=b0,points=new_points)
                             episode_reward, episode_step,info = run_EStrain_episode(agent, env, rpm,400,act_bound,w,b)
                             fitness_list.append(episode_reward)
                             steps.append(episode_step)
@@ -431,15 +430,15 @@ def main():
                             if infos[key]!=0:
                                 summary.add_scalar('train/episode_{}'.format(key),infos[key],ES_step)
                                 summary.add_scalar('train/mean_{}'.format(key),infos[key]/np.mean(steps),ES_step)
-                CPG_best_param = best_param
-                points_add = CPG_best_param.reshape(-1,2)
+                ETG_best_param = best_param
+                points_add = ETG_best_param.reshape(-1,2)
                 new_points = prior_points+points_add
-                w,b,_ = Opt_with_points(CPG=CPG_agent,CPG_T=args.CPG_T,w0=w0,b0=b0,points=new_points)  
-                ES_solver.reset(CPG_best_param)
+                w,b,_ = Opt_with_points(ETG=ETG_agent,ETG_T=args.ETG_T,w0=w0,b0=b0,points=new_points)  
+                ES_solver.reset(ETG_best_param)
     elif args.eval == 1:
-        CPG_info = np.load(args.load[:-3]+".npz")
-        w = CPG_info["w"]
-        b = CPG_info["b"]
+        ETG_info = np.load(args.load[:-3]+".npz")
+        w = ETG_info["w"]
+        b = ETG_info["b"]
         outdir = os.path.join(args.load[:-3],args.task_mode)
         if not os.path.exists(args.load[:-3]):
             os.makedirs(args.load[:-3])
@@ -451,7 +450,7 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--outdir",type=str,default="video")
+    parser.add_argument("--outdir",type=str,default="train_log")
     parser.add_argument("--max_steps",type=int,default=1e7)
     parser.add_argument("--epsilon",type=float,default=0.4)
     parser.add_argument("--gamma",type=float,default=0.95)
@@ -469,18 +468,16 @@ if __name__ == "__main__":
     parser.add_argument("--random",type=int,default=0)
     parser.add_argument("--normal",type=int,default=1)
     parser.add_argument("--vel_d",type=float,default=0.5)
-    parser.add_argument("--vel_mode",type=str,default="max")
-    parser.add_argument("--gait",type=float,default=0)
-    parser.add_argument("--CPG_T",type=float,default=0.5)
+    parser.add_argument("--ETG_T",type=float,default=0.5)
     parser.add_argument("--reward_p",type=float,default=5)
     parser.add_argument("--footheight",type=float,default=0.1)
     parser.add_argument("--steplen",type=float,default=0.05)
-    parser.add_argument("--CPG",type=str,default="two-sac")
-    parser.add_argument("--CPG_T2",type=float,default=0.5)
+    parser.add_argument("--ETG",type=int,default=1)
+    parser.add_argument("--ETG_T2",type=float,default=0.5)
     parser.add_argument("--e_step",type=int,default=400)
     parser.add_argument("--act_mode",type=str,default="traj")
-    parser.add_argument("--CPG_path",type=str,default="None")
-    parser.add_argument("--CPG_H",type=int,default=20)
+    parser.add_argument("--ETG_path",type=str,default="None")
+    parser.add_argument("--ETG_H",type=int,default=20)
     parser.add_argument("--stand",type=float,default=0)
     parser.add_argument("--torso",type=float,default=1.5)
     parser.add_argument("--up",type=float,default=0.6)
@@ -493,8 +490,8 @@ if __name__ == "__main__":
     parser.add_argument("--sensor_motor",type=int,default=1)
     parser.add_argument("--sensor_imu",type=int,default=1)
     parser.add_argument("--sensor_contact",type=int,default=1)
-    parser.add_argument("--sensor_CPG",type=int,default=1)
-    parser.add_argument("--sensor_CPG_obs",type=int,default=0)
+    parser.add_argument("--sensor_ETG",type=int,default=1)
+    parser.add_argument("--sensor_ETG_obs",type=int,default=0)
     parser.add_argument("--sensor_footpose",type=int,default=0)
     parser.add_argument("--sensor_dynamic",type=int,default=0)
     parser.add_argument("--sensor_exforce",type=int,default=0)

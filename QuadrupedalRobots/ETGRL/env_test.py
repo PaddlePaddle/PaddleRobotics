@@ -4,16 +4,12 @@ import gym
 import argparse
 import sys
 import rlschool
-sys.path.append("../")
-from env.MonitorEnv import EnvWrapper,Param_Dict
-from model.CPG_model import CPG_model
+from rlschool.quadrupedal.envs.env_wrappers.MonitorEnv import Param_Dict
 from rlschool.quadrupedal.robots import robot_config
 from rlschool.quadrupedal.envs.env_builder import SENSOR_MODE
 from copy import copy
 import pybullet as p
 sensor_mode = copy(SENSOR_MODE)
-sensor_mode["dis"] = 1
-sensor_mode["yaw"] = 1
 
 def param2dynamic_dict(params):
     param = copy(params)
@@ -33,31 +29,32 @@ def param2dynamic_dict(params):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--load",type=str,default="data/ESStair_origin.npz")
+    parser.add_argument("--load",type=str,default="data/origin_ETG/ESStair_origin.npz")
     parser.add_argument("--video",type=int,default=0)
-    parser.add_argument("--task_mode",type=str,default="stairstair")
+    parser.add_argument("--task",type=str,default="stairstair")
     parser.add_argument("--suffix",type=str,default="exp")
+    parser.add_argument("--save",type=int,default=0)
     parser.add_argument("--step_y",type=str,default=0.05)
     args = parser.parse_args()
 
     dynamic_param = np.load("data/sigma0.5_exp0_dynamic_param9027.npy")
     dynamic_param = param2dynamic_dict(dynamic_param)
     param = copy(Param_Dict)
-    env =  rlschool.make_env('Quadrupedal',render=True,task = args.task_mode,sensor_mode=sensor_mode,
-                        dynamic_param=dynamic_param)
-    env =  EnvWrapper(env=env,param=param,sensor_mode=sensor_mode,normal=1,enable_action_filter=False,
-                        CPG_T=0.5,reward_p=1,CPG_path=args.load,
-                        CPG_T2=0.5,CPG_H=20,act_mode="traj",vel_d=0.6,
-                        task_mode=args.task_mode,step_y=args.step_y)
-    obs,_ = env.reset()
+    env = rlschool.make_env('Quadrupedal',render = True,task = args.task,
+                            dynamic_param = dynamic_param, normal = 1, ETG=1,
+                            reward_param = param, sensor_mode = sensor_mode,
+                            ETG_path = args.load, step_y = args.step_y)
+    obs = env.reset()
     t=0
     td = 0
-    for i in range(1200):
+    action_list = []
+    for i in range(600):
         action=np.zeros(12)
         obs, reward, done, info = env.step(action,donef=False)
-        foot_contact = info["obs-FootContactSensor"]
+        action_list.append(info["ETG_act"])
         # if done:
         #     break
-    np.save("gait_action_list_CPG_{}.npy".format(args.suffix),action_list)
+    if args.save:
+        np.save("gait_action_list_ETG_{}.npy".format(args.suffix),action_list)
 if __name__ == "__main__":
     main()

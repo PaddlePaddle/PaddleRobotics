@@ -20,9 +20,6 @@ from copy import deepcopy
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# __all__ = ['SAC']
-
-
 class BC(parl.Algorithm):
     def __init__(self,
                  model,
@@ -32,7 +29,6 @@ class BC(parl.Algorithm):
             Args:
                 model(parl.Model): forward network of actor and critic.
         """
-
         self.actor_lr = actor_lr
         self.critic_lr = critic_lr
         
@@ -45,7 +41,6 @@ class BC(parl.Algorithm):
     def predict(self, obs):
         act_mean, _ = self.model.policy(obs)
         action = torch.tanh(act_mean)
-        # print("action:",action)
         return action
 
     def sample(self, obs):
@@ -57,12 +52,9 @@ class BC(parl.Algorithm):
 
     def BClearn(self, obs, ref_obs,ref_agent):
         #actor learn
-        # print("obs_shape:",obs.shape)
         action,action_distribution = self.sample(obs)
         with torch.no_grad():
-            # print(ref_obs.shape)
             ref_action = ref_agent.alg.predict(ref_obs)
-            # print(ref_action.shape)
         actor_loss = - action_distribution.log_prob(ref_action).mean()
         self.actor_optimizer.zero_grad()
         actor_loss.backward()

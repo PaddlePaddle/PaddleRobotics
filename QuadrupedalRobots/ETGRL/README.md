@@ -10,8 +10,47 @@ parl >= 1.4.0
 torch >= 1.7.0
 rlschool >= 1.0.2
 ```
+## Data Preparation
 
-## Train in Simulation
+First download the data via the [link](https://mycuhk-my.sharepoint.com/:u:/g/personal/1155156694_link_cuhk_edu_hk/Eb9uCc7TSXJDkBbTeDBaTy0Bzv_F6ilme-Hbp37IhmH4AA?e=q6pzvo). Extract it and move the /data/ folder into this repo. There are three subfolders:
+
+| Folder                        | Description                                |
+| :----------------------:|  :----------------------------------------: |
+| dynamic                   | data used for dynamic adaptation.|
+|   origin_ETG              | Pre-trained ETG model.        |
+| model                  | Well-trained ETG and neural network model in nine tasks.         |
+
+## Procedure
+
+Step 0 (Optional). Dynamic adaptation with Dynamic_train.py. You can just skip this step by use pre-trained dynamic params in /data/sigma0.5_exp0_dynamic_param9027.npy.
+
+Step 1. Train in simulation with train.py, to get the ETG and expert neural network model.
+
+Step 2. BC training with BCtrain.py, to attain the student model.
+
+Step 3. Real robot deployment with /deployment/test.py
+
+## 0. Dynamic Adaptation (Optional) 
+
+We use Dynamic_train.py to train the dynamic parameters via Evolutionary Strategies to narrow the sim-to-real gap. The arguments you may need to modify are:
+
+| Name                    | Type    | Description                                |
+| :----------------------:| :-----: | :----------------------------------------: |
+| outdir                   | string   | The root directory to  save the training log and param files.                |
+| suffix            | string     | The subdirectory to save the training log and model files.                |
+| K            | int   | Number of samples for each thread in one training step.            |
+| thread            | int   | Number of thread used for training.            |
+| eval               | bool     | Evaluation or not.         |
+| alg               | string     | Select Evolution Strategies algorithm.         |
+| xparl               | string     | The local port to start xparl.         |
+
+For example, to run 8 thread for training:
+```python
+xparl start --port XXXX #Start xparl
+python Dynamic_train.py  --thread 8 --K 20 --xparl $local_adrress:XXXX
+```
+
+## 1.1 Train in Simulation
 
 <img src="nine_block.gif" width="1000"/>
 We use train.py for training. The arguments you may need to modify are as below.
@@ -34,18 +73,18 @@ We use train.py for training. The arguments you may need to modify are as below.
 | load               | string     | The path of neural network model to load.        |
 
 For example, train ETG-RL in stairstair.
-```python0
+```python
 python train.py --task_mode stairstair --ETG_path data/origin_ETG/ESStair_origin.npz
 ```
 
-## Evaluation
+## 1.2 Evaluation in simulation
 
 For evaluation, we also use train.py, and make the arg --eval equal to 1.
 ```python
 python train.py --task_mode stairstair --eval 1 --load data/model/StairStair_3_itr_960231.pt
 ```
 
-## BC training
+## 2. BC training
 
 After training, we get an expert policy with full state observation. Then we use behavior cloning algorithm to learn a policy with partial state observation from the expert policy. We use BCtrain.py, the arguments you may need to modify is as bellow.
 
@@ -67,7 +106,7 @@ For example, for stairstair task, we can use the following script.
 python BCtrain.py --task_mode stairstair --ETG_path data/model/StairStair_3_itr_960231.npz --ref_agent data/model/StairStair_3_itr_960231.pt
 ```
 
-## Real Robot Deployment
+## 3. Real Robot Deployment
 <img src="real_robot.gif" width="1000"/>
 To deploy our policy on the real robot, we first need to convert the ETG model to .npy file to save time for real time control. We can use env_test.py to do it.
 

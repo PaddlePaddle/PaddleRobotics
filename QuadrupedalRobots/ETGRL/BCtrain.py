@@ -56,8 +56,8 @@ def obs2noise(obs):
     obs_noise[10:13] += np.random.normal(0,1e-1,size=3)/0.5
     obs_noise[13:25] += np.random.normal(0,1e-2,size=12)/0.1
     obs_noise[25:37] += np.random.normal(0,0.5,size=12)
-    # print(obs_noise-obs)
     return obs_noise
+
 def param2dynamic_dict(params):
     param = copy(params)
     param = np.clip(param,-1,1)
@@ -148,7 +148,6 @@ def run_evaluate_episodes(agent, env,max_step,action_bound,ref_agent=None):
     avg_reward = 0.
     infos = {}
     steps_all = 0
-    # print("hardset:",hardset)
     obs,info = env.reset(x_noise=args.x_noise)
     done = False
     steps = 0

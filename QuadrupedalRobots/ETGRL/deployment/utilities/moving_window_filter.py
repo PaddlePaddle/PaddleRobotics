@@ -1,3 +1,7 @@
+# Third party code
+#
+# The following code are copied or modified from:
+# https://github.com/google-research/motion_imitation
 """Moving window filter to smooth out sensor readings."""
 
 import collections

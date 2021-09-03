@@ -1,3 +1,7 @@
+# Third party code
+#
+# The following code are copied or modified from:
+# https://github.com/google-research/motion_imitation
 """Estimates base velocity for A1 robot from accelerometer readings."""
 import numpy as np
 from filterpy.kalman import KalmanFilter

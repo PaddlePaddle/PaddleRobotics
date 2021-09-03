@@ -1,3 +1,7 @@
+# Third party code
+#
+# The following code are copied or modified from:
+# https://github.com/google-research/motion_imitation
 """Apply the same action to the simulated and real A1 robot.
 
 

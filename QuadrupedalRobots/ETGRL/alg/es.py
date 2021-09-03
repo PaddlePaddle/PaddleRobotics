@@ -1,3 +1,8 @@
+# Third party code
+#
+# The following code are copied or modified from:
+# https://github.com/hardmaru/estool
+
 import numpy as np
 from copy import copy
 

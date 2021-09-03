@@ -23,7 +23,6 @@ class BCReplayMemory(object):
         self.max_size = int(max_size)
         self.obs_dim = obs_dim
         self.act_dim = act_dim
-        # print("obs_dim:",obs_dim,"ref_obs_dim:",ref_obs_dim)
         self.obs = np.zeros((max_size,obs_dim), dtype='float32')
         self.ref_obs = np.zeros((max_size,ref_obs_dim), dtype='float32')
         self._curr_size = 0

@@ -20,8 +20,6 @@ from copy import deepcopy
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# __all__ = ['SAC']
-
 
 class SAC(parl.Algorithm):
     def __init__(self,
@@ -62,7 +60,6 @@ class SAC(parl.Algorithm):
     def predict(self, obs):
         act_mean, _ = self.model.policy(obs)
         action = torch.tanh(act_mean)
-        # print("action:",action)
         return action
 
     def sample(self, obs):
@@ -71,7 +68,6 @@ class SAC(parl.Algorithm):
         # for reparameterization trick  (mean + std*N(0,1))
         x_t = normal.rsample()
         action = torch.tanh(x_t)
-        # print("action:",action)
         log_prob = normal.log_prob(x_t)
         # Enforcing Action Bound
         log_prob -= torch.log((1 - action.pow(2)) + 1e-6)

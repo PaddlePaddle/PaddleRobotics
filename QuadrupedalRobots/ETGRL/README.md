@@ -72,11 +72,18 @@ We use train.py for training. The arguments you may need to modify are as below.
 | act_bound               | float     | Action bound for neural network policy.        |
 | load               | string     | The path of neural network model to load.        |
 
-For example, train ETG-RL in stairstair.
+For example, train ETG-RL in stairstair with our pre-trained ETG. 
 ```python
 python train.py --task_mode stairstair --ETG_path data/origin_ETG/ESStair_origin.npz
 ```
-
+Or you can train it all from scratch.
+```python
+python train.py --task_mode stairstair --ETG_path none
+```
+To pre-train the ETG without RL, you can run pretrian.py
+```python
+python pretrain.py --task_mode $task_name --outdir $outdir_name --suffix $suffix_name
+```
 ## 1.2 Evaluation in simulation
 
 For evaluation, we also use train.py, and make the arg --eval equal to 1.

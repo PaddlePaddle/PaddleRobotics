@@ -22,12 +22,6 @@ TAU = 0.005
 ALPHA = 0.2  # determines the relative importance of entropy term against the reward
 ACTOR_LR = 3e-4
 CRITIC_LR = 3e-4
-# flags.DEFINE_string("suffix", "", "where to save file.")
-# flags.DEFINE_string("load", "", "where to load array.")
-# flags.DEFINE_float("max_time_secs", 1., "maximum time to run the robot.")
-# flags.DEFINE_float("dt", 0.01, "control T")
-# flags.DEFINE_float("dt", 0.01, "control T")
-# FLAGS = flags.FLAGS
 
 def get_obs_dim(sensor_mode):
     obs_dim = 0
@@ -95,25 +89,11 @@ def main():
                                 normal= args.normal,enable_action_filter=args.enable_action_filter,
                                 ETG_data = copy(gait_action))
     obs,info = env.reset()
-    # action = agent.predict(obs)*act_bound
-    
-    # for i in range(100):
-    #     env.step(np.array([0,0.9,-1.8]*4))
-    #     time.sleep(0.02)
-    # print("ok!")
     base_act = np.array([0,0.9,-1.8]*4)
     for i in range(int(args.max_time*100)):
         t_start = time.clock()
         ref_action = gait_action[i]
-        # if args.sensor_ETG:
-        #     if args.normal:
-        #         ETG_act = (ref_action-ETG_mean)/ETG_std
-        #     else:
-        #         ETG_act = copy(ref_action)
-        #     obs = np.concatenate((obs,ETG_act),axis=0)
         action = agent.predict(obs)*act_bound+ref_action
-        # action = np.zeros(12) + ref_action
-        # print("t_now:",time.clock()-t_start)
         obs_list.append(obs)
         action_list.append(action)
         env.step(base_act+action)
@@ -121,8 +101,6 @@ def main():
         t_now = time.clock()-t_start
         if args.dt-t_now >= 5e-4:
             time.sleep(args.dt-t_now)
-        # print(env.get_time())
-        # print(info["real_action"])
     
     np.savez("data/"+args.suffix+"_rpm.npz",action=action_list,obs=obs_list)
 

@@ -22,7 +22,6 @@ def EnvWrapper(robot,dt,sensor_mode,gait,normal,enable_action_filter,ETG_data):
         env = GaitWrapper(env,robot,gait,dt)
     env = ObservationWrapper(env,robot,sensor_mode)
     env = ActionFilterWrapper(env,robot,dt,enable_action_filter)
-    # env = ControlLoopWrapper(env,dt)
     return env
 
 
@@ -120,9 +119,6 @@ class SimpleEnv(object):
         self.robot.Step(action, robot_config.MotorControlMode.POSITION)
         self.last_action = action
         self.iter += 1
-        # obs,info = self.get_observation()
-        # info["real_action"] = action
-        # return obs,info
 
 class GaitWrapper(object):
     def __init__(self,env,robot,gait,dt,velocity=0.5):
@@ -185,7 +181,6 @@ class GaitWrapper(object):
         else:
             T_bf = self.bzg.GenerateTrajectoryX(0.0, 0.0, 0.0, 1, self.T_b0, ClearanceHeight,
                                                 PenetrationDepth, contacts)
-        # print("gait_t_now:",time.clock()-t_start)
         leg_id = 0
         action_ref = np.zeros(12)
         for key in T_bf:
@@ -194,7 +189,6 @@ class GaitWrapper(object):
             action_ref[index] = np.asarray(angle)
             leg_id += 1
         new_action = action + action_ref
-        # print("gait_t_all:",time.clock()-t_start)
         self.env.step(new_action,**kwargs)
         self.info = info
 
@@ -295,7 +289,6 @@ class ActionFilterWrapper(object):
             action = self._FilterAction(action)
         self.env.step(action,**kwargs)
         self._step_counter += 1
-        # return obs_all, info
     
     def get_observation(self):
         return self.env.get_observation()
@@ -318,11 +311,8 @@ class ActionFilterWrapper(object):
         if self._step_counter == 0:
             default_action = np.array([0,0.9,-1.8]*4)
             self._action_filter.init_history(default_action)
-            # for j in range(10):
-            #     self._action_filter.filter(default_action)
 
         filtered_action = self._action_filter.filter(action)
-        # print(filtered_action)
         return filtered_action    
 
 

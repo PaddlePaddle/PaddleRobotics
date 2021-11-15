@@ -8,7 +8,7 @@ Reinforcement Learning with Evolutionary Trajectory Generator: A General Approac
 ```txt
 parl >= 1.4.0
 torch >= 1.7.0
-rlschool >= 1.0.2
+rlschool == 1.0.2
 ```
 ## Data Preparation
 
